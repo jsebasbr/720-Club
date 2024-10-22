@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Corredor 8-Bit</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        #game-container {
+            position: relative;
+            touch-action: none; /* Disable scrolling when touching the game */
+        }
+
+        #gameCanvas {
+            background-color: #000;
+            border: 2px solid #fff;
+            display: block;
+        }
+
+        #score {
+            color: #fff;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="score">Puntos: 0</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Responsiveness: Adjust canvas size based on screen size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth * 0.9;  // 90% of the screen width
+            canvas.height = window.innerHeight * 0.75;  // 75% of the screen height
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas(); // Initial canvas size
+
+        let player = {
+            x: canvas.width / 2 - 15,
+            y: canvas.height - 60,
+            width: 30,
+            height: 30,
+            dx: 0,
+            speed: 5
+        };
+
+        let obstacles = [];
+        let score = 0;
+        let gameSpeed = 3;
+
+        // Add touch control events
+        let isTouching = false;
+        canvas.addEventListener("touchstart", (e) => {
+            const touchX = e.touches[0].clientX;
+            if (touchX < canvas.width / 2) {
+                player.dx = -player.speed;
+            } else {
+                player.dx = player.speed;
+            }
+            isTouching = true;
+        });
+
+        canvas.addEventListener("touchend", () => {
+            player.dx = 0;
+            isTouching = false;
+        });
+
+        // Generador de obstáculos
+        function createObstacle() {
+            let obstacleWidth = Math.random() * (canvas.width / 2);
+            let obstacleX = Math.random() * (canvas.width - obstacleWidth);
+            obstacles.push({ x: obstacleX, y: -20, width: obstacleWidth, height: 20 });
+        }
+
+        // Actualización de los obstáculos
+        function updateObstacles() {
+            obstacles.forEach((obstacle, index) => {
+                obstacle.y += gameSpeed;
+                if (obstacle.y > canvas.height) {
+                    obstacles.splice(index, 1);
+                    score++;
+                }
+
+                // Detectar colisión
+                if (
+                    player.x < obstacle.x + obstacle.width &&
+                    player.x + player.width > obstacle.x &&
+                    player.y < obstacle.y + obstacle.height &&
+                    player.height + player.y > obstacle.y
+                ) {
+                    alert("¡Juego terminado! Puntos: " + score);
+                    document.location.reload();
+                }
+            });
+        }
+
+        // Dibujar el jugador
+        function drawPlayer() {
+            ctx.fillStyle = "#00ff00";
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+        }
+
+        // Dibujar obstáculos
+        function drawObstacles() {
+            ctx.fillStyle = "#ff0000";
+            obstacles.forEach((obstacle) => {
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
+        }
+
+        // Actualizar la posición del jugador
+        function updatePlayer() {
+            player.x += player.dx;
+
+            // Limitar el movimiento dentro del canvas
+            if (player.x < 0) {
+                player.x = 0;
+            }
+            if (player.x + player.width > canvas.width) {
+                player.x = canvas.width - player.width;
+            }
+        }
+
+        // Mostrar el puntaje
+        function drawScore() {
+            document.getElementById("score").innerText = `Puntos: ${score}`;
+        }
+
+        // Función principal de animación
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawPlayer();
+            drawObstacles();
+            updatePlayer();
+            updateObstacles();
+            drawScore();
+
+            if (Math.random() < 0.02) {
+                createObstacle();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Iniciar el juego
+        gameLoop();
+    </script>
+</body>
+</html>
